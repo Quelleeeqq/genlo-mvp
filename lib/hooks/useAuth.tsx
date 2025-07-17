@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useContext, createContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { supabase, auth } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 interface AuthContextType {
   user: User | null;
@@ -48,23 +48,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await auth.signIn(email, password);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
   const signUp = async (email: string, password: string) => {
-    const { error } = await auth.signUp(email, password);
+    const { error } = await supabase.auth.signUp({ email, password });
     return { error };
   };
   const signOut = async () => {
-    const { error } = await auth.signOut();
+    const { error } = await supabase.auth.signOut();
     return { error };
   };
   const signInWithOAuth = async (provider: "google" | "github" | "discord") => {
-    const { error } = await auth.signInWithOAuth(provider);
+    const { error } = await supabase.auth.signInWithOAuth({ provider });
     return { error };
   };
   const resetPassword = async (email: string) => {
-    const { error } = await auth.resetPassword(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
     return { error };
   };
   const getAuthToken = () => session?.access_token || null;
