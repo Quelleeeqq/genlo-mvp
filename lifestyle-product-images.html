@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lifestyle Product Images - Back Stretcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 40px;
+        }
+        .reference-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .reference-image {
+            max-width: 400px;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            margin: 20px auto;
+            display: block;
+        }
+        .reference-text {
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+        .lifestyle-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        .lifestyle-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .lifestyle-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+            transform: translateY(-3px);
+        }
+        .lifestyle-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+        }
+        .lifestyle-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        .lifestyle-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .lifestyle-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .lifestyle-details {
+            font-size: 0.9em;
+            color: #888;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 30px 0;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .result-image {
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .result-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .result-info {
+            padding: 25px;
+        }
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .result-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-1px);
+        }
+        .action-btn.primary {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .action-btn.primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            background: #f8f9fa;
+            color: #666;
+            font-style: italic;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lifestyle Product Images</h1>
+            <p>Create engaging product images with people holding your back stretcher device</p>
+        </div>
+        <div class="content">
+            <div class="reference-section">
+                <h3>Reference Style</h3>
+                <p>Generate images similar to this style with a person holding the product</p>
+                <div class="reference-text">
+                    "A smiling young woman holding a black back stretcher device with blue accent strip, 
+                    looking directly at the camera with a friendly expression, clean background"
+                </div>
+            </div>
+
+            <h3>Choose Your Lifestyle Style</h3>
+            <div class="lifestyle-options" id="lifestyleOptions">
+                <div class="lifestyle-card" data-style="friendly-woman">
+                    <div class="lifestyle-icon">👩</div>
+                    <div class="lifestyle-title">Friendly Woman</div>
+                    <div class="lifestyle-description">Smiling woman holding the product, looking directly at camera with warm, approachable expression</div>
+                    <div class="lifestyle-details">Perfect for: Trust building, approachable brand image</div>
+                </div>
+                
+                <div class="lifestyle-card" data-style="professional-woman">
+                    <div class="lifestyle-icon">👩‍💼</div>
+                    <div class="lifestyle-title">Professional Woman</div>
+                    <div class="lifestyle-description">Confident businesswoman in professional attire, demonstrating the product with authority</div>
+                    <div class="lifestyle-details">Perfect for: Professional credibility, expert positioning</div>
+                </div>
+                
+                <div class="lifestyle-card" data-style="wellness-woman">
+                    <div class="lifestyle-icon">🧘‍♀️</div>
+                    <div class="lifestyle-title">Wellness Woman</div>
+                    <div class="lifestyle-description">Relaxed woman in comfortable clothing, showing the product in a wellness/self-care context</div>
+                    <div class="lifestyle-details">Perfect for: Wellness market, relaxation benefits</div>
+                </div>
+                
+                <div class="lifestyle-card" data-style="athletic-woman">
+                    <div class="lifestyle-icon">🏃‍♀️</div>
+                    <div class="lifestyle-title">Athletic Woman</div>
+                    <div class="lifestyle-description">Active, fit woman in athletic wear, showing the product for post-workout recovery</div>
+                    <div class="lifestyle-details">Perfect for: Fitness market, active lifestyle</div>
+                </div>
+                
+                <div class="lifestyle-card" data-style="casual-woman">
+                    <div class="lifestyle-icon">👚</div>
+                    <div class="lifestyle-title">Casual Woman</div>
+                    <div class="lifestyle-description">Everyday woman in casual clothing, relatable and authentic product demonstration</div>
+                    <div class="lifestyle-details">Perfect for: Mass market appeal, relatability</div>
+                </div>
+                
+                <div class="lifestyle-card" data-style="elegant-woman">
+                    <div class="lifestyle-icon">👗</div>
+                    <div class="lifestyle-title">Elegant Woman</div>
+                    <div class="lifestyle-description">Sophisticated woman in elegant attire, premium presentation of the product</div>
+                    <div class="lifestyle-details">Perfect for: Luxury positioning, premium market</div>
+                </div>
+            </div>
+
+            <button class="generate-btn" id="generateBtn" onclick="generateLifestyleImages()">
+                Generate Lifestyle Product Images
+            </button>
+
+            <div class="results-grid" id="resultsGrid">
+                <!-- Generated images will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedStyle = null;
+
+        // Style selection
+        document.querySelectorAll('.lifestyle-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.lifestyle-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedStyle = card.dataset.style;
+            });
+        });
+
+        async function generateLifestyleImages() {
+            if (!selectedStyle) {
+                alert('Please select a lifestyle style first');
+                return;
+            }
+
+            const button = document.getElementById('generateBtn');
+            const grid = document.getElementById('resultsGrid');
+            
+            button.disabled = true;
+            button.textContent = 'Generating Lifestyle Images...';
+            grid.innerHTML = '';
+
+            const lifestylePrompts = getLifestylePrompts(selectedStyle);
+
+            for (let i = 0; i < lifestylePrompts.length; i++) {
+                const prompt = lifestylePrompts[i];
+                
+                const loadingCard = createLoadingCard(prompt, i + 1, lifestylePrompts.length);
+                grid.appendChild(loadingCard);
+
+                try {
+                    const response = await fetch('/api/image-gen', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt.prompt,
+                            model: 'black-forest-labs/flux-dev-lora',
+                            size: '1024x1024',
+                            quality: 'high',
+                            format: 'png',
+                            negative_prompt: 'blurry, low quality, distorted, amateur, poor lighting, cluttered background, text, watermarks, multiple people, group shot, inappropriate content'
+                        }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok && data.imageUrl) {
+                        const imageCard = createResultCard(prompt, data.imageUrl);
+                        grid.replaceChild(imageCard, loadingCard);
+                    } else {
+                        const errorCard = createErrorCard(prompt, data.error || 'Failed to generate image');
+                        grid.replaceChild(errorCard, loadingCard);
+                    }
+                } catch (error) {
+                    console.error('Error generating image:', error);
+                    const errorCard = createErrorCard(prompt, 'Network error occurred');
+                    grid.replaceChild(errorCard, loadingCard);
+                }
+            }
+
+            button.disabled = false;
+            button.textContent = 'Generate Lifestyle Product Images';
+        }
+
+        function getLifestylePrompts(style) {
+            const prompts = {
+                'friendly-woman': [
+                    {
+                        title: "Friendly Woman - Direct Look",
+                        description: "Smiling woman looking directly at camera, holding the back stretcher device",
+                        prompt: "Professional lifestyle photography of a friendly smiling young woman holding a black back stretcher massage device with light blue accent strip, looking directly at the camera with warm expression, clean light background, high-quality commercial photography, natural lighting, authentic smile"
+                    },
+                    {
+                        title: "Friendly Woman - Side View",
+                        description: "Woman holding the product with a friendly side profile",
+                        prompt: "Lifestyle photography of a friendly young woman holding a black back stretcher massage device with light blue accent strip, side profile view, warm smile, natural lighting, clean background, professional commercial photography"
+                    },
+                    {
+                        title: "Friendly Woman - Close-up",
+                        description: "Close-up shot of woman's face and the product she's holding",
+                        prompt: "Close-up lifestyle photography of a friendly young woman holding a black back stretcher massage device with light blue accent strip, close-up of face and product, warm expression, natural lighting, professional photography"
+                    }
+                ],
+                'professional-woman': [
+                    {
+                        title: "Professional Woman - Business Attire",
+                        description: "Confident businesswoman in professional clothing demonstrating the product",
+                        prompt: "Professional lifestyle photography of a confident businesswoman in professional attire holding a black back stretcher massage device with light blue accent strip, authoritative pose, clean background, high-quality commercial photography"
+                    },
+                    {
+                        title: "Professional Woman - Office Setting",
+                        description: "Professional woman in office environment with the product",
+                        prompt: "Professional lifestyle photography of a businesswoman in office setting holding a black back stretcher massage device with light blue accent strip, professional environment, confident expression, commercial photography"
+                    }
+                ],
+                'wellness-woman': [
+                    {
+                        title: "Wellness Woman - Relaxed Setting",
+                        description: "Relaxed woman in comfortable clothing showing wellness benefits",
+                        prompt: "Wellness lifestyle photography of a relaxed young woman in comfortable clothing holding a black back stretcher massage device with light blue accent strip, peaceful expression, wellness setting, natural lighting, professional photography"
+                    },
+                    {
+                        title: "Wellness Woman - Home Environment",
+                        description: "Woman in home setting demonstrating self-care with the product",
+                        prompt: "Lifestyle photography of a woman in comfortable home setting holding a black back stretcher massage device with light blue accent strip, wellness and self-care theme, relaxed atmosphere, natural lighting"
+                    }
+                ],
+                'athletic-woman': [
+                    {
+                        title: "Athletic Woman - Post-Workout",
+                        description: "Fit woman in athletic wear showing recovery benefits",
+                        prompt: "Athletic lifestyle photography of a fit young woman in athletic wear holding a black back stretcher massage device with light blue accent strip, post-workout recovery theme, energetic expression, professional photography"
+                    },
+                    {
+                        title: "Athletic Woman - Gym Setting",
+                        description: "Athletic woman in gym environment with the product",
+                        prompt: "Athletic lifestyle photography of a fit woman in gym setting holding a black back stretcher massage device with light blue accent strip, fitness environment, confident athletic pose, professional photography"
+                    }
+                ],
+                'casual-woman': [
+                    {
+                        title: "Casual Woman - Everyday Look",
+                        description: "Relatable woman in casual clothing for mass market appeal",
+                        prompt: "Casual lifestyle photography of an everyday young woman in casual clothing holding a black back stretcher massage device with light blue accent strip, relatable expression, natural setting, professional photography"
+                    },
+                    {
+                        title: "Casual Woman - Home Setting",
+                        description: "Casual woman in comfortable home environment",
+                        prompt: "Lifestyle photography of a casual woman in comfortable home setting holding a black back stretcher massage device with light blue accent strip, everyday authentic moment, natural lighting, professional photography"
+                    }
+                ],
+                'elegant-woman': [
+                    {
+                        title: "Elegant Woman - Sophisticated Look",
+                        description: "Sophisticated woman in elegant attire for premium positioning",
+                        prompt: "Elegant lifestyle photography of a sophisticated woman in elegant attire holding a black back stretcher massage device with light blue accent strip, refined expression, premium setting, high-end commercial photography"
+                    },
+                    {
+                        title: "Elegant Woman - Luxury Setting",
+                        description: "Elegant woman in luxury environment with the product",
+                        prompt: "Luxury lifestyle photography of an elegant woman in sophisticated setting holding a black back stretcher massage device with light blue accent strip, premium presentation, refined atmosphere, high-end photography"
+                    }
+                ]
+            };
+
+            return prompts[style] || prompts['friendly-woman'];
+        }
+
+        function createLoadingCard(prompt, current, total) {
+            const progress = (current / total) * 100;
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Generating ${prompt.title}...</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <small>${current} of ${total}</small>
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createResultCard(prompt, imageUrl) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-image">
+                    <img src="${imageUrl}" alt="${prompt.title}" loading="lazy">
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                    <div class="result-actions">
+                        <button class="action-btn" onclick="downloadImage('${imageUrl}', '${prompt.title}')">
+                            📥 Download
+                        </button>
+                        <button class="action-btn" onclick="copyImageUrl('${imageUrl}')">
+                            🔗 Copy URL
+                        </button>
+                        <button class="action-btn primary" onclick="regenerateImage('${prompt.prompt}')">
+                            🔄 Regenerate
+                        </button>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createErrorCard(prompt, error) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <span style="color: #e74c3c; font-size: 1.2em;">❌ ${error}</span>
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function downloadImage(imageUrl, title) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `${title.replace(/\s+/g, '_')}_lifestyle.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function copyImageUrl(imageUrl) {
+            navigator.clipboard.writeText(imageUrl).then(() => {
+                alert('Image URL copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = imageUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Image URL copied to clipboard!');
+            });
+        }
+
+        function regenerateImage(prompt) {
+            console.log('Regenerating image with prompt:', prompt);
+            // Implementation for regenerating a specific image
+        }
+    </script>
+</body>
+</html> 

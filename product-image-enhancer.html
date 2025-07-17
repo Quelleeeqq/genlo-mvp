@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Enhancer - Back Stretcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 40px;
+        }
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 10px;
+        }
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .original-image {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            display: block;
+        }
+        .enhancement-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .option-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .option-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+        .option-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .option-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .option-description {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+        }
+        .result-image {
+            width: 100%;
+            height: 300px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .result-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .result-info {
+            padding: 20px;
+        }
+        .result-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .result-description {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .action-btn.primary {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .action-btn.primary:hover {
+            background: #5a6fd8;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            background: #f8f9fa;
+            color: #666;
+            font-style: italic;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Product Image Enhancer</h1>
+            <p>Transform your back stretcher product images with AI-powered enhancements</p>
+        </div>
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <h3>Upload Your Product Image</h3>
+                <p>Drag and drop your back stretcher image here or click to browse</p>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                    Choose Image
+                </button>
+                <img id="originalImage" class="original-image hidden">
+            </div>
+
+            <div id="enhancementSection" class="hidden">
+                <h3>Choose Enhancement Style</h3>
+                <div class="enhancement-options" id="enhancementOptions">
+                    <div class="option-card" data-style="studio">
+                        <div class="option-title">Studio Photography</div>
+                        <div class="option-description">Professional studio lighting with clean white background, perfect for e-commerce</div>
+                    </div>
+                    <div class="option-card" data-style="lifestyle">
+                        <div class="option-title">Lifestyle Shot</div>
+                        <div class="option-description">Natural setting showing the product in use, creating emotional connection</div>
+                    </div>
+                    <div class="option-card" data-style="technical">
+                        <div class="option-title">Technical Detail</div>
+                        <div class="option-description">Close-up shots highlighting product features and quality</div>
+                    </div>
+                    <div class="option-card" data-style="premium">
+                        <div class="option-title">Premium Presentation</div>
+                        <div class="option-description">High-end luxury styling with sophisticated lighting and composition</div>
+                    </div>
+                    <div class="option-card" data-style="modern">
+                        <div class="option-title">Modern Minimalist</div>
+                        <div class="option-description">Contemporary design with clean lines and subtle backgrounds</div>
+                    </div>
+                    <div class="option-card" data-style="gradient">
+                        <div class="option-title">Gradient Background</div>
+                        <div class="option-description">Modern gradient backgrounds with professional styling</div>
+                    </div>
+                </div>
+
+                <button class="upload-btn" id="generateBtn" onclick="generateEnhancedImages()">
+                    Generate Enhanced Images
+                </button>
+
+                <div class="results-grid" id="resultsGrid">
+                    <!-- Enhanced images will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedStyle = null;
+        let uploadedImage = null;
+
+        // File upload handling
+        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+        
+        const uploadSection = document.getElementById('uploadSection');
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('originalImage');
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                uploadedImage = e.target.result;
+                
+                document.getElementById('enhancementSection').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Style selection
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedStyle = card.dataset.style;
+            });
+        });
+
+        async function generateEnhancedImages() {
+            if (!selectedStyle || !uploadedImage) {
+                alert('Please select an enhancement style and upload an image');
+                return;
+            }
+
+            const button = document.getElementById('generateBtn');
+            const grid = document.getElementById('resultsGrid');
+            
+            button.disabled = true;
+            button.textContent = 'Generating Enhanced Images...';
+            grid.innerHTML = '';
+
+            const enhancementPrompts = getEnhancementPrompts(selectedStyle);
+
+            for (let i = 0; i < enhancementPrompts.length; i++) {
+                const prompt = enhancementPrompts[i];
+                
+                const loadingCard = createLoadingCard(prompt);
+                grid.appendChild(loadingCard);
+
+                try {
+                    // First, analyze the uploaded image
+                    const analysisResponse = await fetch('/api/image-analysis', {
+                        method: 'POST',
+                        body: createFormData(uploadedImage, 'Describe this back stretcher product image in detail for AI enhancement')
+                    });
+
+                    let imageDescription = '';
+                    if (analysisResponse.ok) {
+                        const analysisData = await analysisResponse.json();
+                        imageDescription = analysisData.content || '';
+                    }
+
+                    // Generate enhanced image
+                    const response = await fetch('/api/image-gen', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: `${prompt.prompt}\n\nReference image description: ${imageDescription}`,
+                            model: 'black-forest-labs/flux-dev-lora',
+                            size: '1024x1024',
+                            quality: 'high',
+                            format: 'png',
+                            negative_prompt: 'blurry, low quality, distorted, amateur, poor lighting, cluttered background, text, watermarks'
+                        }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok && data.imageUrl) {
+                        const imageCard = createResultCard(prompt, data.imageUrl);
+                        grid.replaceChild(imageCard, loadingCard);
+                    } else {
+                        const errorCard = createErrorCard(prompt, data.error || 'Failed to generate image');
+                        grid.replaceChild(errorCard, loadingCard);
+                    }
+                } catch (error) {
+                    console.error('Error generating image:', error);
+                    const errorCard = createErrorCard(prompt, 'Network error occurred');
+                    grid.replaceChild(errorCard, loadingCard);
+                }
+            }
+
+            button.disabled = false;
+            button.textContent = 'Generate Enhanced Images';
+        }
+
+        function getEnhancementPrompts(style) {
+            const prompts = {
+                studio: [
+                    {
+                        title: "Studio White Background",
+                        description: "Clean white background with professional studio lighting",
+                        prompt: "Professional product photography of a back stretcher massage device, pure white background, studio lighting, commercial photography style, sharp focus, centered composition, subtle shadows"
+                    },
+                    {
+                        title: "Studio Dramatic Lighting",
+                        description: "Dramatic studio lighting with depth and dimension",
+                        prompt: "Dramatic studio photography of a back stretcher massage device, dramatic lighting, professional commercial photography, sharp focus, premium presentation, high contrast"
+                    }
+                ],
+                lifestyle: [
+                    {
+                        title: "Bedroom Setting",
+                        description: "Relaxing bedroom environment showing wellness use",
+                        prompt: "Lifestyle photography of a back stretcher massage device in a modern bedroom setting, soft natural lighting, wellness and relaxation theme, comfortable atmosphere"
+                    },
+                    {
+                        title: "Living Room Setting",
+                        description: "Modern living room with contemporary styling",
+                        prompt: "Lifestyle photography of a back stretcher massage device in a modern living room, contemporary interior design, natural lighting, premium home environment"
+                    }
+                ],
+                technical: [
+                    {
+                        title: "Macro Detail Shot",
+                        description: "Close-up detail of massage nodes and texture",
+                        prompt: "Macro photography of a back stretcher massage device focusing on massage nodes and texture details, technical product photography, sharp focus, professional lighting"
+                    },
+                    {
+                        title: "Technical Side View",
+                        description: "Technical side view showing ergonomic design",
+                        prompt: "Technical side view photography of a back stretcher massage device, showcasing ergonomic design and construction, professional product photography, sharp focus"
+                    }
+                ],
+                premium: [
+                    {
+                        title: "Premium Luxury Shot",
+                        description: "High-end luxury presentation with sophisticated styling",
+                        prompt: "Premium luxury product photography of a back stretcher massage device, sophisticated lighting, high-end commercial photography, premium presentation, elegant composition"
+                    },
+                    {
+                        title: "Premium Angled View",
+                        description: "Dynamic angled view with premium lighting",
+                        prompt: "Premium angled product photography of a back stretcher massage device, dynamic composition, sophisticated lighting, high-end commercial photography, premium presentation"
+                    }
+                ],
+                modern: [
+                    {
+                        title: "Modern Minimalist",
+                        description: "Clean minimalist design with contemporary styling",
+                        prompt: "Modern minimalist product photography of a back stretcher massage device, clean lines, contemporary styling, minimal background, professional lighting"
+                    },
+                    {
+                        title: "Modern Geometric",
+                        description: "Geometric composition with modern design elements",
+                        prompt: "Modern geometric product photography of a back stretcher massage device, geometric composition, contemporary design, professional lighting, clean aesthetic"
+                    }
+                ],
+                gradient: [
+                    {
+                        title: "Subtle Gradient",
+                        description: "Soft gradient background with professional styling",
+                        prompt: "Product photography of a back stretcher massage device on a subtle gradient background, professional lighting, modern styling, clean composition"
+                    },
+                    {
+                        title: "Bold Gradient",
+                        description: "Bold gradient background with contemporary feel",
+                        prompt: "Product photography of a back stretcher massage device on a bold gradient background, contemporary styling, professional lighting, modern aesthetic"
+                    }
+                ]
+            };
+
+            return prompts[style] || prompts.studio;
+        }
+
+        function createFormData(imageDataUrl, prompt) {
+            const formData = new FormData();
+            
+            // Convert data URL to blob
+            fetch(imageDataUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    formData.append('image', blob, 'product.jpg');
+                    formData.append('prompt', prompt);
+                });
+
+            return formData;
+        }
+
+        function createLoadingCard(prompt) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Generating ${prompt.title}...</span>
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createResultCard(prompt, imageUrl) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-image">
+                    <img src="${imageUrl}" alt="${prompt.title}" loading="lazy">
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                    <div class="result-actions">
+                        <button class="action-btn" onclick="downloadImage('${imageUrl}', '${prompt.title}')">Download</button>
+                        <button class="action-btn primary" onclick="regenerateImage('${prompt.prompt}')">Regenerate</button>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createErrorCard(prompt, error) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <span style="color: #e74c3c;">❌ ${error}</span>
+                </div>
+                <div class="result-info">
+                    <div class="result-title">${prompt.title}</div>
+                    <div class="result-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function downloadImage(imageUrl, title) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `${title.replace(/\s+/g, '_')}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function regenerateImage(prompt) {
+            // Implementation for regenerating a specific image
+            console.log('Regenerating image with prompt:', prompt);
+        }
+    </script>
+</body>
+</html> 

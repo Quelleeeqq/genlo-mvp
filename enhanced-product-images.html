@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Product Images - Back Stretcher</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 40px;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .image-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .image-container {
+            position: relative;
+            height: 300px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .image-info {
+            padding: 20px;
+        }
+        .image-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .image-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .image-specs {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #888;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            background: #f8f9fa;
+            color: #666;
+            font-style: italic;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 20px 0;
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Enhanced Product Photography</h1>
+            <p>Professional back stretcher and massage device images for your website</p>
+        </div>
+        <div class="content">
+            <button class="generate-btn" onclick="generateImages()">Generate Enhanced Product Images</button>
+            
+            <div class="image-grid" id="imageGrid">
+                <!-- Images will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imagePrompts = [
+            {
+                title: "Premium Back Stretcher - Studio Shot",
+                description: "Professional product photography with clean white background, dramatic lighting, and premium presentation",
+                prompt: "Professional product photography of a premium black back stretcher massage device with light blue accent strip, shot on pure white background with studio lighting, high-end commercial photography style, sharp focus, 8K resolution, product centered, subtle shadows, clean composition"
+            },
+            {
+                title: "Lifestyle Back Stretcher - In Use",
+                description: "Lifestyle shot showing the device being used in a modern home setting",
+                prompt: "Lifestyle photography of a black back stretcher massage device with light blue accents being used in a modern minimalist bedroom, soft natural lighting, wellness and relaxation theme, high-quality commercial photography, warm tones, comfortable setting"
+            },
+            {
+                title: "Technical Back Stretcher - Detail Shot",
+                description: "Close-up detail shot highlighting the massage nodes and ergonomic design",
+                prompt: "Macro photography of a black back stretcher massage device focusing on the detailed massage nodes and light blue accent strip, technical product photography, sharp focus on texture and design details, professional lighting, commercial quality"
+            },
+            {
+                title: "Premium Back Stretcher - Angled View",
+                description: "Dynamic angled shot showcasing the device's ergonomic curves and premium finish",
+                prompt: "Dynamic angled product photography of a premium black back stretcher massage device with light blue accent strip, dramatic studio lighting, 45-degree angle view, showcasing ergonomic curves, high-end commercial photography, sharp focus, professional presentation"
+            },
+            {
+                title: "Back Stretcher - White Background",
+                description: "Clean white background shot with perfect lighting and professional presentation",
+                prompt: "Clean white background product photography of a black back stretcher massage device with light blue accent strip, perfect studio lighting, professional commercial photography, centered composition, subtle drop shadow, high resolution, premium presentation"
+            },
+            {
+                title: "Back Stretcher - Gradient Background",
+                description: "Modern gradient background with contemporary styling and premium feel",
+                prompt: "Modern product photography of a black back stretcher massage device with light blue accent strip on a subtle gradient background, contemporary styling, premium feel, professional lighting, commercial quality, centered composition"
+            }
+        ];
+
+        async function generateImages() {
+            const button = document.querySelector('.generate-btn');
+            const grid = document.getElementById('imageGrid');
+            
+            button.disabled = true;
+            button.textContent = 'Generating Images...';
+            grid.innerHTML = '';
+
+            for (let i = 0; i < imagePrompts.length; i++) {
+                const prompt = imagePrompts[i];
+                
+                // Add loading card
+                const loadingCard = createLoadingCard(prompt);
+                grid.appendChild(loadingCard);
+
+                try {
+                    const response = await fetch('/api/image-gen', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt.prompt,
+                            model: 'black-forest-labs/flux-dev-lora',
+                            size: '1024x1024',
+                            quality: 'high',
+                            format: 'png',
+                            negative_prompt: 'blurry, low quality, distorted, amateur, poor lighting, cluttered background'
+                        }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok && data.imageUrl) {
+                        // Replace loading card with actual image
+                        const imageCard = createImageCard(prompt, data.imageUrl);
+                        grid.replaceChild(imageCard, loadingCard);
+                    } else {
+                        // Show error
+                        const errorCard = createErrorCard(prompt, data.error || 'Failed to generate image');
+                        grid.replaceChild(errorCard, loadingCard);
+                    }
+                } catch (error) {
+                    console.error('Error generating image:', error);
+                    const errorCard = createErrorCard(prompt, 'Network error occurred');
+                    grid.replaceChild(errorCard, loadingCard);
+                }
+            }
+
+            button.disabled = false;
+            button.textContent = 'Generate Enhanced Product Images';
+        }
+
+        function createLoadingCard(prompt) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Generating ${prompt.title}...</span>
+                </div>
+                <div class="image-info">
+                    <div class="image-title">${prompt.title}</div>
+                    <div class="image-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createImageCard(prompt, imageUrl) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.innerHTML = `
+                <div class="image-container">
+                    <img src="${imageUrl}" alt="${prompt.title}" loading="lazy">
+                </div>
+                <div class="image-info">
+                    <div class="image-title">${prompt.title}</div>
+                    <div class="image-description">${prompt.description}</div>
+                    <div class="image-specs">
+                        <span>1024x1024</span>
+                        <span>High Quality</span>
+                        <span>FLUX Dev LoRA</span>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function createErrorCard(prompt, error) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.innerHTML = `
+                <div class="loading">
+                    <span style="color: #e74c3c;">❌ ${error}</span>
+                </div>
+                <div class="image-info">
+                    <div class="image-title">${prompt.title}</div>
+                    <div class="image-description">${prompt.description}</div>
+                </div>
+            `;
+            return card;
+        }
+    </script>
+</body>
+</html> 
