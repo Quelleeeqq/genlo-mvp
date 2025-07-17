@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ChatFlowController } from '@/lib/ai/chat-flow-controller';
-import { supabase, chatMessages } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import { chatMessages } from '@/lib/ai/services/chat-messages';
 
 // Initialize the chat flow controller with environment variables
 const chatFlowController = new ChatFlowController({
