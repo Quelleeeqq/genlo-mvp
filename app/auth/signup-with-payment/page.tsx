@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/contexts/AuthContext';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Check, CreditCard, Shield } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import { loadStripe } from '@stripe/stripe-js';
-import { supabase, auth } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 const stripePromise = (() => {
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
