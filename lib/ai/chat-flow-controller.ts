@@ -1661,35 +1661,35 @@ class ChatFlowController {
         }
       }
     } else {
-      // Use image-to-image if reference image is available
-      if (referenceImageUrl) {
-        // Convert reference image URL to base64 if needed
-        let referenceImageBase64 = referenceImageUrl;
-        if (referenceImageUrl.startsWith('http') || referenceImageUrl.startsWith('data:image')) {
-          // If it's already base64, use it directly
-          if (referenceImageUrl.startsWith('data:image')) {
-            referenceImageBase64 = referenceImageUrl.split(',')[1];
-            const result = await this.openai.generateImageFromImage(referenceImageBase64, imagePrompt);
-            imageBase64 = result.imageBase64;
-            structuredData = result.structuredData;
-          } else {
-            // Convert URL to base64 (this would need to be implemented)
-            // For now, we'll use regular image generation
-            const result = await this.openai.generateImage(imagePrompt);
-            imageBase64 = result.imageBase64;
-            structuredData = result.structuredData;
-          }
-        } else {
-          // Assume it's already base64
+    // Use image-to-image if reference image is available
+    if (referenceImageUrl) {
+      // Convert reference image URL to base64 if needed
+      let referenceImageBase64 = referenceImageUrl;
+      if (referenceImageUrl.startsWith('http') || referenceImageUrl.startsWith('data:image')) {
+        // If it's already base64, use it directly
+        if (referenceImageUrl.startsWith('data:image')) {
+          referenceImageBase64 = referenceImageUrl.split(',')[1];
           const result = await this.openai.generateImageFromImage(referenceImageBase64, imagePrompt);
+          imageBase64 = result.imageBase64;
+          structuredData = result.structuredData;
+        } else {
+          // Convert URL to base64 (this would need to be implemented)
+          // For now, we'll use regular image generation
+          const result = await this.openai.generateImage(imagePrompt);
           imageBase64 = result.imageBase64;
           structuredData = result.structuredData;
         }
       } else {
-        // Fall back to regular image generation
-        const result = await this.openai.generateImage(imagePrompt);
+        // Assume it's already base64
+        const result = await this.openai.generateImageFromImage(referenceImageBase64, imagePrompt);
         imageBase64 = result.imageBase64;
         structuredData = result.structuredData;
+      }
+    } else {
+      // Fall back to regular image generation
+      const result = await this.openai.generateImage(imagePrompt);
+      imageBase64 = result.imageBase64;
+      structuredData = result.structuredData;
       }
     }
     

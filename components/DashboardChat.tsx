@@ -4,11 +4,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Toast } from './ui/Toast';
 import Sidebar from './Sidebar';
-import { supabase, chatMessages } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { imageStorage } from '@/lib/services/image-storage';
 
 interface Message {
-  id: string;
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
@@ -59,11 +60,15 @@ interface Message {
 interface DashboardChatProps {
   className?: string;
   activeChatId?: string | null;
+  onSelectChat?: (chatId: string | null) => void;
   onChatCreated?: (chatId: string) => void;
   onChatUpdated?: () => void;
 }
 
-export default function DashboardChat({ className = '', activeChatId: propActiveChatId, onChatCreated, onChatUpdated }: DashboardChatProps) {
+export default function DashboardChat({ className = '', activeChatId: propActiveChatId, onSelectChat, onChatCreated, onChatUpdated }: DashboardChatProps) {
+  // 1. Chat List State
+  const [chats, setChats] = useState<any[]>([]);
+  // 2. Message List State
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +76,6 @@ export default function DashboardChat({ className = '', activeChatId: propActive
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-  const [internalActiveChatId, setInternalActiveChatId] = useState<string | null>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -79,15 +83,20 @@ export default function DashboardChat({ className = '', activeChatId: propActive
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const [chats, setChats] = useState<any[]>([]); // Add this state
+
+  const controlledActiveChatId = propActiveChatId ?? null;
 
   // Use prop if provided, otherwise use internal state
-  const activeChatId = propActiveChatId ?? internalActiveChatId;
-  const setActiveChatId = (id: string | null) => {
-    if (propActiveChatId !== undefined) {
+  const setActiveChatIdProp = (id: string | null) => {
+    if (onSelectChat) {
+      onSelectChat(id);
+    } else if (propActiveChatId !== undefined) {
       onChatCreated?.(id!);
     } else {
-      setInternalActiveChatId(id);
+      // This case should ideally not happen if controlledActiveChatId is set correctly
+      // but as a fallback, we can set it to null or throw an error if not handled
+      // For now, we'll just log a warning.
+      console.warn('No active chat ID set, cannot set active chat.');
     }
   };
 
@@ -101,7 +110,7 @@ export default function DashboardChat({ className = '', activeChatId: propActive
     scrollToBottom();
   }, [messages]);
 
-  // Fetch chats and auto-select most recent if none selected
+  // Fetch chat list on login and after chat creation/deletion
   useEffect(() => {
     if (!user?.id) return;
     const fetchChats = async () => {
@@ -110,125 +119,151 @@ export default function DashboardChat({ className = '', activeChatId: propActive
         .select('*')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
-      if (!error) {
-        setChats(data || []);
-        if (data && data.length > 0 && !activeChatId) {
-          setActiveChatId(data[0].id);
-        } else if (data && data.length === 0 && !activeChatId) {
-          // No chats, create a new one
-          await createNewChat();
-        }
+      console.log('Fetched chats:', data, 'Error:', error);
+      if (!error) setChats(data || []);
+      if (data && data.length > 0 && !controlledActiveChatId) {
+        console.log('Setting activeChatId to first chat:', data[0].id);
+        setActiveChatIdProp(data[0].id);
       }
     };
     fetchChats();
   }, [user?.id]);
 
+  // Always fetch messages for the selected chat
   useEffect(() => {
-    if (user?.id && activeChatId) {
-      loadMessages();
+    if (!controlledActiveChatId) {
+      console.log('No activeChatId, skipping message fetch');
+      return;
     }
-  }, [activeChatId, user?.id]);
-
-  const createNewChat = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('chats')
-        .insert([{ user_id: user.id, title: 'New Chat' }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      if (data) {
-        setActiveChatId(data.id);
-        onChatCreated?.(data.id);
-      }
-    } catch (error) {
-      console.error('Error creating new chat:', error);
-    }
-  };
-
-  const loadMessages = async () => {
-    if (!activeChatId) return;
-    
-    setIsLoadingMessages(true);
-    try {
+    const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
-        .eq('chat_id', activeChatId)
+        .eq('chat_id', controlledActiveChatId)
         .order('created_at', { ascending: true });
+      console.log('Fetched messages for chat', controlledActiveChatId, ':', data, 'Error:', error);
+      if (!error && data) {
+        setMessages(data.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.created_at),
+          role: msg.role as 'user' | 'assistant',
+          imageUrl: msg.image_url || (msg.image_base64 ? msg.image_base64 : undefined),
+          imageBase64: msg.image_base64,
+          enhancedPrompt: msg.enhanced_prompt,
+          structuredData: msg.structured_data,
+          imageMetadata: msg.image_metadata,
+          functionCalls: msg.function_calls,
+          webSearchCalls: msg.web_search_calls,
+          fileSearchCalls: msg.file_search_calls,
+          usage: msg.usage
+        })));
+      }
+    };
+    fetchMessages();
+  }, [controlledActiveChatId]);
 
-      if (error) throw error;
-
-      const formattedMessages = data.map(msg => ({
-        ...msg,
-        timestamp: new Date(msg.created_at),
-        role: msg.role as 'user' | 'assistant',
-        imageUrl: msg.image_url,
-        imageBase64: msg.image_base64,
-      }));
-
-      setMessages(formattedMessages);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    } finally {
-      setIsLoadingMessages(false);
+  // Create new chat
+  const createNewChat = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('chats')
+      .insert([{ user_id: user.id, title: 'New Chat' }])
+      .select()
+      .single();
+    if (data) {
+      setChats(prev => [data, ...prev]);
+      setActiveChatIdProp(data.id);
+      setMessages([]); // Clear messages for new chat
     }
   };
 
   const updateChatTitle = async (title: string) => {
-    if (!activeChatId) return;
+    if (!controlledActiveChatId) return;
 
     try {
       const { error } = await supabase
         .from('chats')
         .update({ title })
-        .eq('id', activeChatId);
+        .eq('id', controlledActiveChatId);
 
       if (error) throw error;
+      // Update local chat list state
+      setChats(prev => prev.map(chat => chat.id === controlledActiveChatId ? { ...chat, title } : chat));
     } catch (error) {
       console.error('Error updating chat title:', error);
     }
   };
 
+  // Save message and reload messages for current chat
   const saveMessage = async (message: Message) => {
-    if (!user?.id || !activeChatId) return;
-
-    try {
-      const { error } = await supabase
+    if (!user?.id || !controlledActiveChatId) return;
+    let imageUrl = message.imageUrl;
+    let imageBase64 = message.imageBase64;
+    if (message.imageBase64 && !message.imageUrl) {
+      const uploadResult = await imageStorage.uploadBase64Image(
+        message.imageBase64,
+        `chat-image-${Date.now()}.png`,
+        'chat-images'
+      );
+      if (!uploadResult.error) {
+        imageUrl = uploadResult.url;
+        imageBase64 = undefined;
+      }
+    }
+    const insertData = {
+      chat_id: controlledActiveChatId,
+      role: message.role,
+      content: message.content,
+      user_id: user.id,
+      image_base64: imageBase64,
+      image_url: imageUrl,
+      enhanced_prompt: message.enhancedPrompt,
+      structured_data: message.structuredData,
+      image_metadata: message.imageMetadata,
+      function_calls: message.functionCalls,
+      web_search_calls: message.webSearchCalls,
+      file_search_calls: message.fileSearchCalls,
+      usage: message.usage
+    };
+    console.log('Inserting message:', insertData);
+    await supabase.from('chat_messages').insert(insertData);
+    // Update chat title with first user message if it's still "New Chat"
+    if (message.role === 'user') {
+      const { data: existingMessages } = await supabase
         .from('chat_messages')
-        .insert({
-          chat_id: activeChatId,
-          role: message.role,
-          content: message.content,
-          user_id: user.id,
-          image_base64: message.imageBase64,
-          image_url: message.imageUrl,
-          enhanced_prompt: message.enhancedPrompt,
-          structured_data: message.structuredData,
-          image_metadata: message.imageMetadata,
-          function_calls: message.functionCalls,
-          web_search_calls: message.webSearchCalls,
-          file_search_calls: message.fileSearchCalls,
-          usage: message.usage
-        });
-
-      if (error) throw error;
-
-      // Update chat title with first message if it's still "New Chat"
-      if (message.role === 'user' && messages.length === 0) {
+        .select('id')
+        .eq('chat_id', controlledActiveChatId)
+        .eq('role', 'user')
+        .limit(1);
+      if (existingMessages && existingMessages.length === 1) {
         const title = message.content.length > 50 
           ? message.content.substring(0, 50) + '...' 
           : message.content;
-        await updateChatTitle(title);
-        // Trigger sidebar refresh after a short delay to ensure the update is saved
-        setTimeout(() => onChatUpdated?.(), 100);
+        await supabase.from('chats').update({ title }).eq('id', controlledActiveChatId);
+        setChats(prev => prev.map(chat => chat.id === controlledActiveChatId ? { ...chat, title } : chat));
       }
-    } catch (error) {
-      console.error('Error saving message:', error);
+    }
+    // Always reload messages after saving
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('chat_id', controlledActiveChatId)
+      .order('created_at', { ascending: true });
+    if (!error && data) {
+      setMessages(data.map(msg => ({
+        ...msg,
+        timestamp: new Date(msg.created_at),
+        role: msg.role as 'user' | 'assistant',
+        imageUrl: msg.image_url || (msg.image_base64 ? msg.image_base64 : undefined),
+        imageBase64: msg.image_base64,
+        enhancedPrompt: msg.enhanced_prompt,
+        structuredData: msg.structured_data,
+        imageMetadata: msg.image_metadata,
+        functionCalls: msg.function_calls,
+        webSearchCalls: msg.web_search_calls,
+        fileSearchCalls: msg.file_search_calls,
+        usage: msg.usage
+      })));
     }
   };
 
@@ -259,14 +294,25 @@ export default function DashboardChat({ className = '', activeChatId: propActive
   };
 
   const sendMessage = async () => {
-    if (!inputValue.trim() && !referenceImage) return;
+    console.log('=== sendMessage called ===');
+    console.log('sendMessage called with:', { 
+      inputValue: inputValue.substring(0, 50), 
+      hasReferenceImage: !!referenceImage,
+      userId: user?.id,
+      activeChatId: controlledActiveChatId 
+    });
+    
+    if (!inputValue.trim() && !referenceImage) {
+      console.log('No input value or reference image, returning');
+      return;
+    }
     if (!user?.id) {
+      console.log('No user ID, showing error toast');
       showToastMessage('Please log in to send messages', 'error');
       return;
     }
 
     const userMessage: Message = {
-      id: Date.now().toString(),
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date(),
@@ -359,7 +405,7 @@ export default function DashboardChat({ className = '', activeChatId: propActive
                 message: userMessage.content,
                 referenceImageUrl: userMessage.imageBase64,
                 userId: user.id,
-                chatId: activeChatId
+                chatId: controlledActiveChatId
               }),
             });
             
@@ -502,33 +548,36 @@ export default function DashboardChat({ className = '', activeChatId: propActive
     return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const renderMessage = (message: Message) => {
+  const renderMessage = (message: Message, key?: string) => {
     const isUser = message.role === 'user';
     
     return (
       <div
-        key={message.id}
-        className={`flex ${isUser ? 'justify-end' : 'justify-start'} px-4 py-2`}
+        key={key || message.id || Math.random()}
+        className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}
       >
-        <div className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl ${isUser ? 'ml-auto' : 'mr-auto'}`}>
-          {/* Message content */}
-          <div className={`rounded-2xl px-4 py-3 shadow-sm ${
+        <div className={
+          isUser
+            ? 'w-fit'
+            : 'w-fit'
+        }>
+          <div className={`inline-block align-top rounded-2xl px-4 py-2 shadow-sm break-words text-base leading-relaxed ${
             isUser 
-              ? 'bg-black text-white rounded-br-md' 
-              : 'bg-gray-200 text-gray-900 rounded-bl-md'
-          }`}>
+              ? 'bg-black text-white' 
+              : 'bg-gray-200 text-gray-900'
+          } text-left`} style={{ minHeight: 0 }}>
             {/* Only show text content if there's no image or if it's a user message */}
             {(!isUser && (message.imageBase64 || message.imageUrl)) ? null : (
-              <div className="whitespace-pre-wrap leading-relaxed text-sm font-normal">{message.content}</div>
+              <div>{message.content}</div>
             )}
             
             {/* Uploaded image display (for user messages) */}
             {isUser && message.imageBase64 && (
-              <div className="mt-3">
+              <div className="mt-1">
                 <img
                   src={message.imageBase64.startsWith('data:') ? message.imageBase64 : `data:image/jpeg;base64,${message.imageBase64}`}
                   alt="Uploaded image"
-                  className="w-full h-auto rounded-xl max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  className="w-full h-auto rounded-lg max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => {
                     if (message.imageBase64) {
                       const imageSrc = message.imageBase64.startsWith('data:') ? message.imageBase64 : `data:image/jpeg;base64,${message.imageBase64}`;
@@ -541,11 +590,11 @@ export default function DashboardChat({ className = '', activeChatId: propActive
             
             {/* Generated image display (for assistant messages) */}
             {!isUser && (message.imageBase64 || message.imageUrl) && (
-              <div className="mt-3">
+              <div className="mt-1">
                 <img
                   src={message.imageBase64 ? `data:image/png;base64,${message.imageBase64}` : message.imageUrl}
                   alt="Generated image"
-                  className="w-full h-auto rounded-xl max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                  className="w-full h-auto rounded-lg max-h-40 object-cover cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => {
                     const imageSrc = message.imageBase64 ? `data:image/png;base64,${message.imageBase64}` : message.imageUrl;
                     if (imageSrc) {
@@ -555,6 +604,8 @@ export default function DashboardChat({ className = '', activeChatId: propActive
                 />
               </div>
             )}
+            {/* Timestamp below message, right for user, left for assistant */}
+            <div className={`text-xs opacity-40 mt-1 ${isUser ? 'text-right pr-1' : 'text-left pl-1'}`} style={{ fontSize: '0.75rem', marginTop: 2 }}>{formatTimestamp(message.timestamp)}</div>
           </div>
           
           {/* Enhanced prompt info - only show if no image */}
@@ -701,11 +752,6 @@ export default function DashboardChat({ className = '', activeChatId: propActive
               ))}
             </div>
           )}
-
-          {/* Timestamp */}
-          <div className="text-xs opacity-40 mt-1 text-center">
-            {formatTimestamp(message.timestamp)}
-          </div>
         </div>
       </div>
     );
@@ -715,7 +761,7 @@ export default function DashboardChat({ className = '', activeChatId: propActive
     <div className="flex h-screen w-full bg-transparent overflow-hidden">
       {/* Sidebar - sticky/fixed */}
       <div className="h-screen w-64 flex-shrink-0 bg-transparent border-r border-gray-200 fixed left-0 top-0 z-30">
-        <Sidebar onSelectChat={setActiveChatId} activeChatId={activeChatId} onChatCreated={onChatCreated} onChatUpdated={onChatUpdated} />
+        <Sidebar onSelectChat={setActiveChatIdProp} activeChatId={controlledActiveChatId} onChatCreated={onChatCreated} onChatUpdated={onChatUpdated} />
       </div>
 
       {/* Main chat area - with left margin for sidebar */}
@@ -772,11 +818,11 @@ export default function DashboardChat({ className = '', activeChatId: propActive
         {messages.length > 0 && (
           <div 
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto px-2"
-            style={{ maxHeight: 'calc(100vh - 80px)', paddingBottom: '96px' }} // 96px for input bar height
+            className="flex-1 overflow-y-auto px-0 py-1 bg-white/80"
+            style={{ maxHeight: 'calc(100vh - 80px)', paddingBottom: '80px' }}
           >
-            <div className="flex flex-col">
-              {messages.map(renderMessage)}
+            <div className="mx-auto max-w-2xl w-full flex flex-col">
+              {messages.map(message => renderMessage(message, message.id))}
               
               {/* Loading bubble for general message sending */}
               {isLoading && !isGeneratingImage && (

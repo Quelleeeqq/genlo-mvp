@@ -3,19 +3,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import DashboardChat from '@/components/DashboardChat';
 import MultiSceneVideoGenerator from '@/components/MultiSceneVideoGenerator';
+import AuthDebug from '@/components/AuthDebug';
 import Link from 'next/link';
 
 const LOGO = ['G', 'e', 'n', 'L', 'o'];
 
-// Assume you have a user object from context or props
-import { useUser } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 export default function Dashboard() {
   const [showVideoGen, setShowVideoGen] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const user = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -157,31 +157,17 @@ export default function Dashboard() {
       </div>
 
       {/* Floating Glassy Nav Bar with Logo Inside */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-40 w-[96vw] max-w-5xl flex items-center justify-between px-8 py-2 rounded-2xl glass-nav-light shadow-xl border border-black/10 backdrop-blur-xl transition-all duration-300 min-h-[64px]">
-        <div className="flex-1 flex items-center justify-center relative" style={{ minHeight: '48px' }}>
-          <span className="floating-logo-in-nav">
-            {LOGO.map((char, i) => (
-              <span
-                key={i}
-                className="floating-logo-letter"
-                style={{ animationDelay: `${i * 0.12}s` }}
-              >
-                {char}
-              </span>
-            ))}
-          </span>
-        </div>
-        <div className="flex items-center gap-8 text-black text-base font-medium">
-          <Link href="/pricing" className="nav-link-light">Pricing</Link>
-          <Link href="/" className="nav-link-light">Home</Link>
-          <span className="inline-flex items-center gap-2 px-4 py-2 bg-black/10 text-black rounded-lg font-semibold shadow-md cursor-pointer select-none transition-transform duration-200 hover:scale-105 backdrop-blur-sm">User</span>
-        </div>
-      </nav>
+      {/* Remove the entire nav bar JSX (the <nav>...</nav> block) */}
+      {/* Add a minimal user indicator at the top right: */}
+      <div className="fixed top-4 right-8 z-40">
+        <span className="inline-flex items-center gap-2 px-4 py-2 bg-black/10 text-black rounded-lg font-semibold shadow-md cursor-pointer select-none transition-transform duration-200 hover:scale-105 backdrop-blur-sm">User</span>
+      </div>
 
       {/* Full-screen Chat Interface */}
       <div className="w-full h-screen pt-20">
         <DashboardChat 
           activeChatId={activeChatId}
+          onSelectChat={setActiveChatId}
           onChatCreated={setActiveChatId}
           onChatUpdated={() => {
             // This will trigger a refresh of the sidebar

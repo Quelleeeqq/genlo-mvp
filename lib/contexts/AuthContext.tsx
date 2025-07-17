@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, auth } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { AuthContextType, AuthState, LoginCredentials, SignUpCredentials, AuthUser } from '@/lib/types/auth';
 import { User, Session } from '@supabase/supabase-js';
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { session } = await auth.getCurrentSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await handleSessionChange(session);
       }
@@ -83,13 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (credentials: LoginCredentials) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      const { data, error } = await auth.signIn(credentials.email, credentials.password);
-      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return { error: error.message };
       }
-      
       return { error: null, data };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -103,15 +104,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (credentials.password !== credentials.confirmPassword) {
         return { error: 'Passwords do not match' };
       }
-
       setState(prev => ({ ...prev, loading: true, error: null }));
-      const { data, error } = await auth.signUp(credentials.email, credentials.password);
-      
+      const { data, error } = await supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+        options: {
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+        },
+      });
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return { error: error.message };
       }
-      
       return { error: null, data };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -123,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
-      await auth.signOut();
+      await supabase.auth.signOut();
       setState({
         user: null,
         session: null,
@@ -139,13 +143,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      const { error } = await auth.resetPassword(email);
-      
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/reset-password` : undefined,
+      });
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return { error: error.message };
       }
-      
       setState(prev => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
@@ -158,13 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updatePassword = async (password: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      const { error } = await auth.updatePassword(password);
-      
+      const { data, error } = await supabase.auth.updateUser({ password });
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return { error: error.message };
       }
-      
       setState(prev => ({ ...prev, loading: false }));
       return { error: null };
     } catch (error) {
@@ -177,13 +179,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithOAuth = async (provider: 'google' | 'github' | 'discord') => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      const { error } = await auth.signInWithOAuth(provider);
-      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
+        },
+      });
       if (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
         return { error: error.message };
       }
-      
       return { error: null };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
