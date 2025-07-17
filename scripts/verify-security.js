@@ -22,8 +22,8 @@ if (fs.existsSync(envPath)) {
   
   // Check for hardcoded API keys
   const hardcodedKeys = [
-    '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',
-    'AIzaSyCe2DVXHWrrW5kWZWtCp8JZeZHnPhIVLmU'
+    'sk-your-actual-key-here',
+    'your-google-ai-studio-api-key'
   ];
   
   let foundHardcoded = false;
